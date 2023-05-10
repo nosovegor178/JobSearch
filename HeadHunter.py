@@ -9,17 +9,18 @@ def mean(numbers):
 def take_vacancies(programming_language):
     page = 0
     pages_number = 1
+    city_of_vacancie = 1
+    job_search_period = 30
     hh_jobs = []
-    url = "https://api.hh.ru/vacancies"
-    headers = {"HH-User-Agent": ""}
-    payload = {
-            "text": "Программист {}".format(programming_language),
-            "area": 1,
-            "period": 30,
-            "only_with_salary": "true",
-            "page": page
-        }
+    url = 'https://api.hh.ru/vacancies'
+    headers = {'HH-User-Agent': ''}
     while page < pages_number:
+        payload = {
+            'text': 'Программист {}'.format(programming_language),
+            'area': city_of_vacancie,
+            'period': job_search_period,
+            'page': page
+        }
         response = requests.get(url, params=payload, headers=headers)
         response.raise_for_status()
         page_payload = response.json()
@@ -29,46 +30,47 @@ def take_vacancies(programming_language):
     return hh_jobs
 
 
-def predict_salary(salary_from, salary_to):
+def predict_salary_for_hh(salary_from, salary_to):
     if salary_from is None:
-        mid_salary = salary_to * 0.8
+        mid_salary_for_hh = salary_to * 0.8
     elif salary_to is None:
-        mid_salary = salary_from * 1.2
+        mid_salary_for_hh = salary_from * 1.2
     else:
         salary = [salary_from, salary_to]
-        mid_salary = mean(salary)
-    return mid_salary
+        mid_salary_for_hh = mean(salary)
+    return mid_salary_for_hh
 
 
-def predict_rub_salary(vacancie):
-    vacancie_salary = vacancie['salary']
-    if vacancie_salary['currency'] == 'RUR':
-        mid_rub_salary = predict_salary(
-            vacancie_salary['from'],
-            vacancie_salary['to'])
+def predict_rub_salary(job_vacancy):
+    print(job_vacancy)
+    vacancie_currency = job_vacancy['salary']['currency']
+    vacancie_salary = job_vacancy['salary']
+    if vacancie_currency == 'RUR':
+        mid_rub_salary = predict_salary_for_hh(vacancie_salary['from'],
+                                                vacancie_salary['to'])
         return mid_rub_salary
-    else:
-        None
 
 
-def take_mid_salaries(vacancies):
+def take_mid_salaries(job_vacancies):
     mid_salaries = []
-    for vacancie in vacancies:
-        mid_salary = predict_rub_salary(vacancie)
+    for job_vacancy in job_vacancies:
+        mid_salary = predict_rub_salary(job_vacancy)
         mid_salaries.append(mid_salary)
     return mid_salaries
 
 
 def create_languages_rating_for_hh(programming_languages):
-    languages_rating = {}
+    languages_rating = {'website_name': 'HeadHunter'}
     for programming_language in programming_languages:
         hh_jobs = take_vacancies(programming_language)
-        mid_salaries = take_mid_salaries(hh_jobs[0]['items'])
-        mid_language_salary = mean(mid_salaries)
+        all_vacancies = hh_jobs[0]['items']
+        number_of_vacancies = hh_jobs[0]['found']
+        mid_salaries = take_mid_salaries(all_vacancies)
+        average_salary_by_language = mean(mid_salaries)
         language_rate = {
-            "vacancies_found": hh_jobs[0]['found'],
-            "vacansies_proceed": len(mid_salaries),
-            "average_salary": int(mid_language_salary)
+            'vacancies_found': number_of_vacancies,
+            'vacansies_proceed': len(mid_salaries),
+            'average_salary': int(average_salary_by_language)
         }
         languages_rating[programming_language] = language_rate
     return languages_rating
