@@ -7,23 +7,16 @@ def mean(numbers):
 
 
 def take_vacancies(api_key, programming_language):
-    page = 0
-    pages_number = 1
-    sj_vacancies = []
     url = 'https://api.superjob.ru/2.2/vacancies'
     headers = {'X-Api-App-Id': api_key}
-    while page < pages_number:
-        payload = {
-        'town': 'Москва',
-        'keyword': 'Программист {}'.format(programming_language),
-        'page': page
-        }
-        response = requests.get(url, headers=headers, params=payload)
-        response.raise_for_status()
-        page_payload = response.json()
-        pages_number = page_payload['page']
-        page += 1
-        sj_vacancies.append(page_payload)
+    payload = {
+    'town': 'Москва',
+    'keyword': 'Программист {}'.format(programming_language),
+    'period': 0
+    }
+    response = requests.get(url, headers=headers, params=payload)
+    response.raise_for_status()
+    sj_vacancies = response.json()
     return sj_vacancies
 
 
@@ -39,31 +32,31 @@ def predict_salary_for_sj(salary_from, salary_to):
 
 
 def predict_rub_salary_for_sj(job_vacancy):
-    if job_vacancie['currency'] == 'rub':
+    if job_vacancy['currency'] == 'rub':
         mid_rub_salary = predict_salary_for_sj(
-            job_vacancie['payment_from'],
-            job_vacancie['payment_to'])
+            job_vacancy['payment_from'],
+            job_vacancy['payment_to'])
         return mid_rub_salary
 
 
 def take_mid_salaries(job_vacancies):
     mid_salaries = []
-    for job_vacancie in job_vacancies:
-        mid_salary = predict_rub_salary_for_sj(job_vacancie)
+    for job_vacancy in job_vacancies:
+        mid_salary = predict_rub_salary_for_sj(job_vacancy)
         mid_salaries.append(mid_salary)
     return mid_salaries
 
 
 def create_languages_rating_for_sj(programming_languages, api_key):
-    languages_raiting = {'website_name': 'SuperJob'}
+    languages_rate = []
     for programming_language in programming_languages:
         sj_jobs = take_vacancies(api_key, programming_language)
         mid_salaries = take_mid_salaries(sj_jobs['objects'])
         mid_language_salary = mean(mid_salaries)
-        language_rate = {
+        language_rate = {programming_language: {
             'vacancies_found': sj_jobs['total'],
             'vacansies_proceed': len(mid_salaries),
             'average_salary': int(mid_language_salary)
-        }
-        languages_raiting[programming_language] = language_rate
-    return languages_raiting
+        }}
+        languages_rate.append(language_rate)
+    return languages_rate

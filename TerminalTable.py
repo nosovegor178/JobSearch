@@ -5,27 +5,43 @@ from HeadHunter import create_languages_rating_for_hh
 import os
 
 
-def create_table_data(website_raiting):
-    table_info = [
+def create_language_instance(language_raiting, table_insides):
+    for language_name, language_rate in language_raiting.items():
+        language_instance = []
+        language_instance.append(language_name)
+        language_instance.append(language_rate['vacancies_found'])
+        language_instance.append(language_rate['vacansies_proceed'])
+        language_instance.append(language_rate['average_salary'])
+        return language_instance
+
+
+def create_table_insides(website_raiting):
+    table_insides = [
         ['Язык программирования',
          'Вакансий найдено',
          'Вакансий обработанно',
          'Средняя зарплата']
     ]
-    for language_name, language_raiting in website_raiting.items():
-        language_info = []
-        language_info.append(language_name)
-        language_info.append(language_raiting['vacancies_found'])
-        language_info.append(language_raiting['vacansies_proceed'])
-        language_info.append(language_raiting['average_salary'])
-        table_info.append(language_data)
-    return table_info
+    for language_raiting in website_raiting:
+        language_instance = create_language_instance(language_raiting, table_insides)
+        table_insides.append(language_instance)
+    return table_insides
+
+
+def create_table(website_raiting, website_name):
+    title = '{} Moscow'.format(website_name)
+    table_insides = create_table_insides(website_raiting)
+    table_instance = AsciiTable(table_insides, title)
+    table_instance.justify_columns[4] = 'right'
+    return table_instance
 
 
 if __name__ == '__main__':
     load_dotenv()
+    hh_raiting = []
+    sj_raiting = []
     sj_api_key = os.environ['SUPER_JOB_API']
-    programming_languages = {
+    programming_languages = [
             'Python',
             'Java',
             'JavaScript',
@@ -35,15 +51,14 @@ if __name__ == '__main__':
             'C',
             'C#',
             'Go'
-        }
+        ]
     hh_raiting = create_languages_rating_for_hh(programming_languages)
     sj_raiting = create_languages_rating_for_sj(programming_languages,
                                                 sj_api_key)
     websites_raiting = [hh_raiting, sj_raiting]
-    for website_raiting in websites_raiting:
-        title = '{} Moscow'.format(website_raiting['website_name'])
-        table_info = create_table_data(website_raiting)
-        table_instance = AsciiTable(table_info, title)
-        table_instance.justify_columns[4] = 'right'
+    website_names = ['HeadHunter', 'SuperJob']
+    for website_number, website_raiting in enumerate(websites_raiting):
+        title = website_names[website_number]
+        table_instance = create_table(website_raiting, title)
         print(table_instance.table)
         print()

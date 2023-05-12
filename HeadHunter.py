@@ -41,36 +41,48 @@ def predict_salary_for_hh(salary_from, salary_to):
     return mid_salary_for_hh
 
 
-def predict_rub_salary(job_vacancy):
-    print(job_vacancy)
-    vacancie_currency = job_vacancy['salary']['currency']
-    vacancie_salary = job_vacancy['salary']
+def predict_rub_salary(job_salaries):
+    vacancie_currency = job_salaries['currency']
+    vacancie_salary = job_salaries
     if vacancie_currency == 'RUR':
         mid_rub_salary = predict_salary_for_hh(vacancie_salary['from'],
                                                 vacancie_salary['to'])
         return mid_rub_salary
 
 
+def vacancy_check(job_salary):
+    if job_salary is None:
+        job_currency = {'from': 0,
+        'to': 0,
+        'currency': 'RUR',
+        'gross': False
+        }
+        checked_salary = predict_rub_salary(job_currency)
+    else:
+        checked_salary = predict_rub_salary(job_salary)
+    return checked_salary
+
+
 def take_mid_salaries(job_vacancies):
     mid_salaries = []
     for job_vacancy in job_vacancies:
-        mid_salary = predict_rub_salary(job_vacancy)
+        mid_salary = vacancy_check(job_vacancy['salary'])
         mid_salaries.append(mid_salary)
     return mid_salaries
 
 
 def create_languages_rating_for_hh(programming_languages):
-    languages_rating = {'website_name': 'HeadHunter'}
+    languages_rate = []
     for programming_language in programming_languages:
         hh_jobs = take_vacancies(programming_language)
         all_vacancies = hh_jobs[0]['items']
         number_of_vacancies = hh_jobs[0]['found']
         mid_salaries = take_mid_salaries(all_vacancies)
         average_salary_by_language = mean(mid_salaries)
-        language_rate = {
+        language_rate = {programming_language: {
             'vacancies_found': number_of_vacancies,
             'vacansies_proceed': len(mid_salaries),
             'average_salary': int(average_salary_by_language)
-        }
-        languages_rating[programming_language] = language_rate
-    return languages_rating
+        }}
+        languages_rate.append(language_rate)
+    return languages_rate
