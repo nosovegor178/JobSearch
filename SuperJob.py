@@ -1,14 +1,19 @@
 import requests
+from itertools import count
 from general_functions import gets_the_arithmetic_mean, predict_salary
+from pprint import pprint
+import os
 
 
-def take_vacancies(api_key, programming_language):
+def take_vacancies_in_page(api_key, programming_language, page):
     full_period = 0
     url = 'https://api.superjob.ru/2.2/vacancies'
     headers = {'X-Api-App-Id': api_key}
-    payload = {'town': 'Москва',
-               'keyword': 'Программист {}'.format(programming_language),
-               'period': full_period
+    payload = {
+        'town': 'Москва',
+        'keyword': 'Программист {}'.format(programming_language),
+        'period': full_period,
+        'page': page
     }
     response = requests.get(url, headers=headers, params=payload)
     response.raise_for_status()
@@ -16,31 +21,35 @@ def take_vacancies(api_key, programming_language):
     return sj_vacancies
 
 
-def predict_rub_salary_for_sj(job_vacancy):
-    if job_vacancy['currency'] == 'rub':
-        mid_rub_salary = predict_salary(job_vacancy['payment_from'],
-                                        job_vacancy['payment_to'])
-        return mid_rub_salary
-
-
-def take_mid_salaries(job_vacancies):
-    mid_salaries = []
-    for job_vacancy in job_vacancies:
-        mid_salary = predict_rub_salary_for_sj(job_vacancy)
-        mid_salaries.append(mid_salary)
-    return mid_salaries
-
-
-def create_languages_rating_for_sj(programming_languages, api_key):
-    languages_rate = []
+def get_vacancies_statistics(programming_languages, api_key):
+    averages_salaries = []
+    all_pages_salaries = []
     for programming_language in programming_languages:
-        sj_jobs = take_vacancies(api_key, programming_language)
-        mid_salaries = take_mid_salaries(sj_jobs['objects'])
-        mid_language_salary = gets_the_arithmetic_mean(mid_salaries)
-        language_rate = {programming_language: {
-            'vacancies_found': sj_jobs['total'],
-            'vacansies_proceed': len(mid_salaries),
-            'average_salary': int(mid_language_salary)
+        for page in count(0):
+            page_payload = take_vacancies_in_page(api_key,
+                                                  programming_language,
+                                                  page)
+            for vacancy in page_payload['objects']:
+                if not (vacancy['payment_to'] or vacancy['payment_from']):
+                    continue
+                if not vacancy['currency'] == 'rub':
+                    continue
+                average_salary = predict_salary(vacancy['payment_from'],
+                                                vacancy['payment_to']
+                )
+                averages_salaries.append(average_salary)
+            if not page_payload['more']:
+                break
+        if averages_salaries:
+            arithmetics_mean = gets_the_arithmetic_mean(averages_salaries)
+            average_salary = int(arithmetics_mean)
+        else:
+            average_salary = None
+        vacancies_amount = page_payload['total']
+        vacancies_statistics = {programming_language: {
+            'average_salary': average_salary,
+            'vacancies_found': vacancies_amount,
+            'vacancies_processed': len(averages_salaries)
         }}
-        languages_rate.append(language_rate)
-    return languages_rate
+        all_pages_salaries.append(vacancies_statistics)
+    return all_pages_salaries
