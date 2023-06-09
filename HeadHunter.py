@@ -22,13 +22,12 @@ def take_vacancies_in_page(programming_language, page):
 
 def take_all_pages_vacancies(programming_language):
     hh_jobs = []
+    maximum_number_of_pages = 18
     for page in count(0):
         response = take_vacancies_in_page(programming_language, page)
         page_payload = response.json()
         hh_jobs.append(page_payload)
-        if page-1 >= page_payload['page']:
-            break
-        elif page > 18:
+        if page-1 >= page_payload['page'] or page > maximum_number_of_pages:
             break
     return hh_jobs
 
@@ -43,16 +42,11 @@ def predict_rub_salary(job_salaries):
 
 
 def vacancy_check(job_salary):
-    if job_salary is None:
-        job_currency = {'from': 0,
-                        'to': 0,
-                        'currency': 'RUR',
-                        'gross': False
-        }
-        checked_salary = predict_rub_salary(job_currency)
+    if not job_salary:
+        return 0
     else:
         checked_salary = predict_rub_salary(job_salary)
-    return checked_salary
+        return checked_salary
 
 
 def take_mid_salaries(all_pages):
@@ -79,18 +73,3 @@ def create_languages_rating_for_hh(programming_languages):
         }}
         languages_rate.append(language_rate)
     return languages_rate
-
-
-programming_languages = [
-            'Python',
-            'Java',
-            'JavaScript',
-            'Ruby',
-            'PHP',
-            'C++',
-            'C',
-            'C#',
-            'Go'
-        ]
-
-print(create_languages_rating_for_hh(programming_languages))

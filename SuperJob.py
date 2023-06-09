@@ -1,8 +1,6 @@
 import requests
 from itertools import count
 from general_functions import gets_the_arithmetic_mean, predict_salary
-from pprint import pprint
-import os
 
 
 def take_vacancies_in_page(api_key, programming_language, page):
