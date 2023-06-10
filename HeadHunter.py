@@ -32,22 +32,19 @@ def take_all_pages_vacancies(programming_language):
     return hh_jobs
 
 
-def predict_rub_salary(job_salaries):
-    vacancie_currency = job_salaries['currency']
-    vacancie_salary = job_salaries
-    if vacancie_currency == 'RUR':
-        mid_rub_salary = predict_salary(vacancie_salary['from'],
-                                        vacancie_salary['to'])
+def predict_rub_salary(job_salary):
+    vacancy_currency = job_salary['currency']
+    if vacancy_currency == 'RUR':
+        mid_rub_salary = predict_salary(job_salary['from'],
+                                        job_salary['to'])
         return mid_rub_salary
 
 
-def vacancy_check(job_salary):
+def learns_vacancy_salary(job_salary):
     if not job_salary:
         return 0
-    else:
-        checked_salary = predict_rub_salary(job_salary)
-        return checked_salary
-
+    vacancy_salary = predict_rub_salary(job_salary)
+    return vacancy_salary
 
 def take_mid_salaries(all_pages):
     mid_salaries = []
@@ -63,11 +60,11 @@ def create_languages_rating_for_hh(programming_languages):
     languages_rate = []
     for programming_language in programming_languages:
         all_vacancies = take_all_pages_vacancies(programming_language)
-        number_of_vacancies = all_vacancies[0]['found']
+        vacancies_number = all_vacancies[0]['found']
         mid_salaries = take_mid_salaries(all_vacancies)
         average_salary_by_language = gets_the_arithmetic_mean(mid_salaries)
         language_rate = {programming_language: {
-            'vacancies_found': number_of_vacancies,
+            'vacancies_found': vacancies_number,
             'vacancies_processed': len(mid_salaries),
             'average_salary': int(average_salary_by_language)
         }}
